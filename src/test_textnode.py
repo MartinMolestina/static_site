@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType, text_node_to_html_node
-
+from split_delimiter import split_nodes_delimiter
 
 class TestTextNode(unittest.TestCase):
 
@@ -73,6 +73,87 @@ class TestTextNode(unittest.TestCase):
         node = TextNode("Invalid", FakeType())
         with self.assertRaises(ValueError):
             text_node_to_html_node(node)    
+
+    def test_basic_code_block(self):
+        node = TextNode("Here is `code` in text.", TextType.TEXT)
+        expected = [
+            TextNode("Here is ", TextType.TEXT),
+            TextNode("code", TextType.CODE),
+            TextNode(" in text.", TextType.TEXT),
+        ]
+        result = split_nodes_delimiter([node], "`", TextType.CODE)
+        self.assertEqual(result, expected)
+
+    def test_multiple_code_blocks(self):
+        node = TextNode("`a` and `b` are code", TextType.TEXT)
+        expected = [
+            TextNode("a", TextType.CODE),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("b", TextType.CODE),
+            TextNode(" are code", TextType.TEXT),
+        ]
+        result = split_nodes_delimiter([node], "`", TextType.CODE)
+        self.assertEqual(result, expected)
+
+    def test_bold_text(self):
+        node = TextNode("This is **bold** text", TextType.TEXT)
+        expected = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+            TextNode(" text", TextType.TEXT),
+        ]
+        result = split_nodes_delimiter([node], "**", TextType.BOLD)
+        self.assertEqual(result, expected)
+
+    def test_italic_text(self):
+        node = TextNode("It was _italic_ indeed", TextType.TEXT)
+        expected = [
+            TextNode("It was ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" indeed", TextType.TEXT),
+        ]
+        result = split_nodes_delimiter([node], "_", TextType.ITALIC)
+        self.assertEqual(result, expected)
+
+    def test_no_delimiter(self):
+        node = TextNode("Nothing special here", TextType.TEXT)
+        result = split_nodes_delimiter([node], "`", TextType.CODE)
+        self.assertEqual(result, [node])
+
+    def test_unmatched_delimiter(self):
+        node = TextNode("Unmatched `code", TextType.TEXT)
+        result = split_nodes_delimiter([node], "`", TextType.CODE)
+        self.assertEqual(result, [node])
+
+    def test_non_text_node(self):
+        node = TextNode("**already bold**", TextType.BOLD)
+        result = split_nodes_delimiter([node], "**", TextType.BOLD)
+        self.assertEqual(result, [node])
+
+    def test_empty_text_node(self):
+        node = TextNode("", TextType.TEXT)
+        result = split_nodes_delimiter([node], "`", TextType.CODE)
+        self.assertEqual(result, [])
+
+    def test_link_node(self):
+        node = TextNode("link", TextType.LINK, url="https://example.com")
+        result = split_nodes_delimiter([node], "`", TextType.CODE)
+        self.assertEqual(result, [node])
+
+    def test_chain_split_code_and_bold(self):
+        node = TextNode("this `code` is **bold**", TextType.TEXT)
+        result1 = split_nodes_delimiter([node], "`", TextType.CODE)
+        result2 = split_nodes_delimiter(result1, "**", TextType.BOLD)
+        expected = [
+            TextNode("this ", TextType.TEXT),
+            TextNode("code", TextType.CODE),
+            TextNode(" is ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+        ]
+        self.assertEqual(result2, expected)
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
