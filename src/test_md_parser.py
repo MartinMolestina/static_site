@@ -1,5 +1,5 @@
 import unittest
-from markdown_parser import extract_markdown_images, extract_markdown_links, split_nodes_link, split_nodes_image
+from markdown_parser import extract_markdown_images, extract_markdown_links, split_nodes_link, split_nodes_image, text_to_textnodes
 from textnode import TextNode, TextType
 
 
@@ -117,3 +117,64 @@ class TestMarkdownParser(unittest.TestCase):
         node = TextNode("anchor", TextType.LINK, "https://boot.dev")
         result = split_nodes_link([node])
         self.assertListEqual([node], result)
+
+    def test_text_to_textnodes_multiple_formats(self):
+        text = "This is **bold**, _italic_, and `code`."
+        result = text_to_textnodes(text)
+        expected = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+            TextNode(", ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(", and ", TextType.TEXT),
+            TextNode("code", TextType.CODE),
+            TextNode(".", TextType.TEXT),
+        ]
+        self.assertListEqual(result, expected)
+
+    def test_text_to_textnodes_only_text(self):
+        text = "Just plain text here."
+        result = text_to_textnodes(text)
+        expected = [TextNode("Just plain text here.", TextType.TEXT)]
+        self.assertListEqual(result, expected)
+
+    def test_text_to_textnodes_text_with_link(self):
+        text = "Check [Boot.dev](https://boot.dev) for more info."
+        result = text_to_textnodes(text)
+        expected = [
+            TextNode("Check ", TextType.TEXT),
+            TextNode("Boot.dev", TextType.LINK, "https://boot.dev"),
+            TextNode(" for more info.", TextType.TEXT),
+        ]
+        self.assertListEqual(result, expected)
+
+    def test_text_to_textnodes_text_with_image(self):
+        text = "See this ![pic](https://img.com/x.png)"
+        result = text_to_textnodes(text)
+        expected = [
+            TextNode("See this ", TextType.TEXT),
+            TextNode("pic", TextType.IMAGE, "https://img.com/x.png")
+        ]
+        self.assertListEqual(result, expected)
+
+    def test_text_to_textnodes_nested_formatting(self):
+        # This is technically not valid markdown (nested delimiters), but we test anyway
+        text = "**bold _not nested_**"
+        result = text_to_textnodes(text)
+        # We'll only parse the bold, not try to nest
+        expected = [
+            TextNode("bold _not nested_", TextType.BOLD),
+        ]
+        self.assertListEqual(result, expected)
+
+    def test_text_to_textnodes_malformed_delimiters(self):
+        text = "Missing closing **bold here"
+        result = text_to_textnodes(text)
+        expected = [TextNode("Missing closing **bold here", TextType.TEXT)]
+        self.assertListEqual(result, expected)
+
+    def test_text_to_textnodes_empty_string(self):
+        text = ""
+        result = text_to_textnodes(text)
+        expected = []
+        self.assertListEqual(result, expected)
