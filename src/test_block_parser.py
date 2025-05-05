@@ -1,5 +1,5 @@
 import unittest
-from block_parser import markdown_to_blocks
+from block_parser import markdown_to_blocks, block_to_block_type, BlockType
 
 class TestBlockParser(unittest.TestCase):
 
@@ -51,3 +51,53 @@ class TestBlockParser(unittest.TestCase):
         blocks = markdown_to_blocks(md)
         self.assertEqual(blocks, [])
 
+
+
+class TestBlockToBlockType(unittest.TestCase):
+
+    def test_heading_block(self):
+        self.assertEqual(block_to_block_type("# Heading"), BlockType.HEADING)
+        self.assertEqual(block_to_block_type("###### Subheading"), BlockType.HEADING)
+
+    def test_code_block(self):
+        code = "```\ndef func():\n    pass\n```"
+        self.assertEqual(block_to_block_type(code), BlockType.CODE)
+
+    def test_quote_block(self):
+        quote = "> This is a quote\n> With another line"
+        self.assertEqual(block_to_block_type(quote), BlockType.QUOTE)
+
+    def test_unordered_list_block(self):
+        ul = "- First item\n- Second item"
+        self.assertEqual(block_to_block_type(ul), BlockType.UNORDERED_LIST)
+
+    def test_ordered_list_block(self):
+        ol = "1. First item\n2. Second item\n3. Third item"
+        self.assertEqual(block_to_block_type(ol), BlockType.ORDERED_LIST)
+
+    def test_paragraph_block(self):
+        paragraph = "This is just a normal paragraph of text.\nIt goes on a second line."
+        self.assertEqual(block_to_block_type(paragraph), BlockType.PARAGRAPH)
+
+    def test_invalid_heading(self):
+        self.assertEqual(block_to_block_type("####### Not a valid heading"), BlockType.PARAGRAPH)
+
+    def test_mixed_quote_and_text(self):
+        mixed = "> Quote line\nNormal line"
+        self.assertEqual(block_to_block_type(mixed), BlockType.PARAGRAPH)
+
+    def test_unordered_list_with_extra_space(self):
+        invalid_ul = "-item without space\n- second item"
+        self.assertEqual(block_to_block_type(invalid_ul), BlockType.PARAGRAPH)
+
+    def test_ordered_list_wrong_start(self):
+        wrong_ol = "0. First\n1. Second"
+        self.assertEqual(block_to_block_type(wrong_ol), BlockType.PARAGRAPH)
+
+    def test_ordered_list_wrong_increment(self):
+        bad_ol = "1. First\n3. Second"
+        self.assertEqual(block_to_block_type(bad_ol), BlockType.PARAGRAPH)
+
+
+if __name__ == '__main__':
+    unittest.main()
