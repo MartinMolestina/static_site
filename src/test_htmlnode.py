@@ -39,7 +39,7 @@ class TestLeafNode(unittest.TestCase):
 
     def test_leaf_to_html_raises_if_value_none(self):
         with self.assertRaises(ValueError):
-            LeafNode("p", None)
+            LeafNode("p", None).to_html()
 
     def test_leaf_to_html_with_multiple_props(self):
         props = {"href": "https://example.com", "target": "_blank"}
