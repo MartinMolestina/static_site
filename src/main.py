@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from markdown_parser import generate_page
+from markdown_parser import generate_pages_recursive
 
 PUBLIC_DIR = "public"
 STATIC_DIR = "static"
@@ -21,7 +21,7 @@ def copy_static_to_public():
 def main():
     delete_public_dir()
     copy_static_to_public()
-    generate_page(CONTENT_FILE, TEMPLATE_FILE, OUTPUT_FILE)
+    generate_pages_recursive("content", "template.html", "public")
 
 if __name__ == "__main__":
     main()
